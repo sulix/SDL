@@ -407,13 +407,10 @@ SDL_LoadBMP_RW(SDL_RWops * src, int freesrc)
             goto done;
         }
 
-        /*
-        | guich: always use 1<<bpp b/c some bitmaps can bring wrong information
-        | for colorsUsed
-        */
-        /* if (biClrUsed == 0) {  */
-        biClrUsed = 1 << biBitCount;
-        /* } */
+        if (biClrUsed == 0) {  
+            biClrUsed = 1 << biBitCount;
+        }
+
         if (biSize == 12) {
             for (i = 0; i < (int) biClrUsed; ++i) {
                 SDL_RWread(src, &palette->colors[i].b, 1, 1);
