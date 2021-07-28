@@ -147,6 +147,13 @@ void SDL_WAYLAND_UnloadSymbols(void);
 #define libdecor_configuration_get_window_state (*WAYLAND_libdecor_configuration_get_window_state)
 #endif
 
+#else /* SDL_VIDEO_DRIVER_WAYLAND_DYNAMIC */
+
+#ifdef HAVE_LIBDECOR_H
+/* This needs to be included when statically linked. */
+#include <libdecor.h>
+#endif
+
 #endif /* SDL_VIDEO_DRIVER_WAYLAND_DYNAMIC */
 
 #include "wayland-client-protocol.h"
