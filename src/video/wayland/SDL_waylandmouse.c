@@ -250,6 +250,32 @@ create_buffer_from_shm(Wayland_CursorData *d,
     return 0;
 }
 
+/* Creates a copy of an ARGB8888-format surface's pixels with premultiplied alpha */
+/* Adapted from the one in src/video/kmsdrm/SDL_kmsdrmmouse.c */
+static void premultiply_surface_alpha_ARGB8888 (SDL_Surface *src, Uint32 *dst) {
+
+    Uint32 A, R, G, B;
+    Uint32 *src_px = (Uint32*)src->pixels;
+    int i;
+    for (i = 0; i < src->h * src->pitch / 4; ++i) {
+        /* Component bytes extraction. */
+        A = (*src_px >> (3 << 3)) & 0xFF;
+        R = (*src_px >> (2 << 3)) & 0xFF;
+        G = (*src_px >> (1 << 3)) & 0xFF;
+        B = (*src_px >> (0 << 3)) & 0xFF;
+        src_px++;
+
+        /* Alpha pre-multiplication of each component. */
+        R = (float)A * ((float)R /255);
+        G = (float)A * ((float)G /255);
+        B = (float)A * ((float)B /255);
+
+        /* ARGB8888 pixel recomposition. */
+        (*dst++) = (((Uint32)A << 24) | ((Uint32)R << 16) | ((Uint32)G << 8)) | ((Uint32)B << 0);
+    }
+}
+
+
 static SDL_Cursor *
 Wayland_CreateCursor(SDL_Surface *surface, int hot_x, int hot_y)
 {
@@ -282,9 +308,8 @@ Wayland_CreateCursor(SDL_Surface *surface, int hot_x, int hot_y)
             return NULL;
         }
 
-        SDL_memcpy(data->shm_data,
-                   surface->pixels,
-                   surface->h * surface->pitch);
+        /* Wayland requires premultiplied alpha for its surfaces. */
+        premultiply_surface_alpha_ARGB8888(surface, data->shm_data);
 
         data->surface = wl_compositor_create_surface(wd->compositor);
         wl_surface_set_user_data(data->surface, NULL);
