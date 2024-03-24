@@ -149,26 +149,6 @@ SDL_Surface *SDL_CreateSurface(int width, int height, SDL_PixelFormatEnum format
     surface->pitch = (int)pitch;
     SDL_SetSurfaceClipRect(surface, NULL);
 
-    if (SDL_ISPIXELFORMAT_INDEXED(surface->format->format)) {
-        SDL_Palette *palette =
-            SDL_CreatePalette((1 << surface->format->bits_per_pixel));
-        if (!palette) {
-            SDL_DestroySurface(surface);
-            return NULL;
-        }
-        if (palette->ncolors == 2) {
-            /* Create a black and white bitmap palette */
-            palette->colors[0].r = 0xFF;
-            palette->colors[0].g = 0xFF;
-            palette->colors[0].b = 0xFF;
-            palette->colors[1].r = 0x00;
-            palette->colors[1].g = 0x00;
-            palette->colors[1].b = 0x00;
-        }
-        SDL_SetSurfacePalette(surface, palette);
-        SDL_DestroyPalette(palette);
-    }
-
     /* Get the pixels */
     if (surface->w && surface->h) {
         surface->pixels = SDL_aligned_alloc(SDL_SIMDGetAlignment(), size);

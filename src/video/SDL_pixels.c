@@ -1347,6 +1347,11 @@ static Uint8 *Map1toN(SDL_PixelFormat *src, Uint8 Rmod, Uint8 Gmod, Uint8 Bmod, 
         return NULL;
     }
 
+    /* An all-zero map for surfaces without a palette. */ 
+    if (!pal) {
+        return map;
+    }
+
     /* We memory copy to the pixel map so the endianness is preserved */
     for (i = 0; i < pal->ncolors; ++i) {
         Uint8 R = (Uint8)((pal->colors[i].r * Rmod) / 255);
@@ -1366,6 +1371,11 @@ static Uint8 *MapNto1(SDL_PixelFormat *src, SDL_PixelFormat *dst, int *identical
     SDL_Palette dithered;
     SDL_Color colors[256];
     SDL_Palette *pal = dst->palette;
+
+    if (!pal) {
+        *identical = 1;
+        return NULL;
+    }
 
     dithered.ncolors = 256;
     SDL_DitherColors(colors, 8);
@@ -1443,8 +1453,12 @@ int SDL_MapSurface(SDL_Surface *src, SDL_Surface *dst)
     if (SDL_ISPIXELFORMAT_INDEXED(srcfmt->format)) {
         if (SDL_ISPIXELFORMAT_INDEXED(dstfmt->format)) {
             /* Palette --> Palette */
-            map->info.table =
-                Map1to1(srcfmt->palette, dstfmt->palette, &map->identity);
+            if (srcfmt->palette && dstfmt->palette) {
+                map->info.table =
+                    Map1to1(srcfmt->palette, dstfmt->palette, &map->identity);
+            } else {
+                map->identity = 1;
+            }
             if (!map->identity) {
                 if (!map->info.table) {
                     return -1;

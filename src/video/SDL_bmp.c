@@ -203,7 +203,7 @@ SDL_Surface *SDL_LoadBMP_IO(SDL_IOStream *src, SDL_bool closeio)
     Uint32 Gmask = 0;
     Uint32 Bmask = 0;
     Uint32 Amask = 0;
-    SDL_Palette *palette;
+    SDL_Palette *palette = NULL;
     Uint8 *bits;
     Uint8 *top, *end;
     SDL_bool topDown;
@@ -439,8 +439,7 @@ SDL_Surface *SDL_LoadBMP_IO(SDL_IOStream *src, SDL_bool closeio)
     }
 
     /* Load the palette, if any */
-    palette = (surface->format)->palette;
-    if (palette) {
+    if (SDL_ISPIXELFORMAT_INDEXED(surface->format->format)) {
         if (SDL_SeekIO(src, fp_offset + 14 + biSize, SDL_IO_SEEK_SET) < 0) {
             SDL_Error(SDL_EFSEEK);
             goto done;
@@ -454,14 +453,7 @@ SDL_Surface *SDL_LoadBMP_IO(SDL_IOStream *src, SDL_bool closeio)
         if (biClrUsed == 0) {
             biClrUsed = 1 << biBitCount;
         }
-
-        if (biClrUsed > (Uint32)palette->ncolors) {
-            biClrUsed = 1 << biBitCount; /* try forcing it? */
-            if (biClrUsed > (Uint32)palette->ncolors) {
-                SDL_SetError("Unsupported or incorrect biClrUsed field");
-                goto done;
-            }
-        }
+        palette = SDL_CreatePalette(biClrUsed);
 
         if (biSize == 12) {
             for (i = 0; i < (int)biClrUsed; ++i) {
@@ -488,7 +480,7 @@ SDL_Surface *SDL_LoadBMP_IO(SDL_IOStream *src, SDL_bool closeio)
                 palette->colors[i].a = SDL_ALPHA_OPAQUE;
             }
         }
-        palette->ncolors = biClrUsed;
+        SDL_SetSurfacePalette(surface, palette);
     }
 
     /* Read the surface pixels.  Note that the bmp image is upside down */
